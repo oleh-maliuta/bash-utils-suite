@@ -6,7 +6,7 @@ section_count=1
 declare -A section_numbers
 
 # Display project sections
-for section in ./projects/*/; do
+for section in ../../projects/*/; do
   folder="${section%/}"
   folder="${folder##*/}"
   echo "$section_count. '$folder'"
@@ -22,7 +22,7 @@ echo
 read -p "Enter choise: " selected_option
 
 # Import functions for validation
-source './scripts/validation.sh'
+source '../validation.sh'
 
 # Check if the input is a positive integer
 if ! is_positive_integer "$selected_option"; then

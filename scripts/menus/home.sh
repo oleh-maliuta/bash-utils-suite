@@ -1,6 +1,6 @@
 #!/bin/bash
 
-main_option_headers=(
+option_headers=(
 'Open the projects list.'
 'Quit.'
 )
@@ -8,8 +8,8 @@ main_option_headers=(
 echo 'Select an action:'
 
 # Display options
-for option_idx in "${!main_option_headers[@]}"; do
-  echo "$((option_idx + 1)). ${main_option_headers[$option_idx]}"
+for option_idx in "${!option_headers[@]}"; do
+  echo "$((option_idx + 1)). ${option_headers[$option_idx]}"
 done
 
 # Read user's selected option from the input
@@ -17,7 +17,7 @@ echo
 read -p "Enter choise: " selected_option
 
 # Import functions for validation
-source './scripts/validation.sh'
+source '../validation.sh'
 
 # Check if the input is a positive integer
 if ! is_positive_integer "$selected_option"; then
@@ -30,12 +30,12 @@ fi
 case $selected_option in
   1)
     location_name="sections"
-  ;;
+    ;;
   2)
     location_name=""
-  ;;
+    ;;
   *)
     message_color="\e[1;31m"
-    message="Failure: Choise must be between 1 and ${#main_option_headers[@]}. Try again."
+    message="Failure: Choise must be between 1 and ${#option_headers[@]}. Try again."
     return 0
 esac

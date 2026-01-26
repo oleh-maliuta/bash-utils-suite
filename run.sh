@@ -7,6 +7,9 @@ export message="Welcome to the list of my experemental Bash projects!"
 export selected_section=""
 export selected_project=""
 
+# Navigate to the menus directory
+cd scripts/menus
+
 while [ -n "$location_name" ]; do
 
   # Display the message
@@ -27,16 +30,16 @@ while [ -n "$location_name" ]; do
   case "$location_name" in
     home)
       location_path=("Home")
-    ;;
+      ;;
     sections)
       location_path=("Home" "Sections")
-    ;;
+      ;;
     projects)
       location_path=("Home" "Sections" "$selected_section")
-    ;;
+      ;;
     manage_project)
       location_path=("Home" "Sections" "$selected_section" "$selected_project")
-    ;;
+      ;;
     *)
       clear
       echo -e "\e[1;31mError:\e[0m Invalid location_name variable!"
@@ -52,7 +55,7 @@ while [ -n "$location_name" ]; do
   echo
 
   # Run the current menu script
-  source ./scripts/menus/"$location_name".sh
+  source ./"$location_name".sh
 
 done
 
