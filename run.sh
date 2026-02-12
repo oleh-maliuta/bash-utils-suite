@@ -7,8 +7,6 @@ export message="Welcome to the list of my experemental Bash projects!"
 export selected_section=""
 export selected_project=""
 
-declare -rx original_path=$(pwd)
-
 # Navigate to the menus directory
 cd scripts/menus
 

@@ -15,10 +15,14 @@ extensions_to_categories[Executables]='deb pkg dmg exe msi'
 others_dir='Others'
 
 # --- Variables ---
+
 target_dir=""
 verbose=false
+dry_run=false
 excluded_dirs=()
 ignored_exts=()
+
+dry_run_files=()
 
 #  --- Functions ---
 
@@ -26,19 +30,34 @@ ignored_exts=()
 usage() {
   echo "Usage: $0 <directory_path> [OPTIONS]"
   echo "Options:"
-  echo "  -v, --verbose         Show detailed output"
-  echo "  -ed, --exclude-dirs   Comma-separated list of directories NOT to create (e.g., 'Images,Videos')."
-  echo "  -ie, --ignore-exts    Comma-separated list of extensions to ignore (e.g., 'txt,log')."
-  echo "  -h, --help            Show this help message"
+  echo "  -v, --verbose        Show detailed output."
+  echo "  -e, --exclude-dirs   Comma-separated list of directories NOT to create (e.g., 'Images,Videos')."
+  echo "  -i, --ignore-exts    Comma-separated list of extensions to ignore (e.g., 'txt,log')."
+  echo "  -n, --dry-run        Simulate file sorting."
+  echo "  -h, --help           Show this help message."
 }
 
 # Logger
 log() {
-  if $verbose; then
+  if $verbose || $dry_run; then
     echo "$1"
   fi
 }
 
+# Action wrapper to handle dry runs
+run_cmd() {
+  local msg="$1"
+  local cmd="$2"
+
+  if $dry_run; then
+    echo "[DRY RUN] $msg"
+  else
+    log "$msg"
+    eval "$cmd"
+  fi
+}
+
+# Checks if the specefied file extension is contained in one of the excluded directories
 is_ext_contained_in_excluded_dirs() {
   for category in ${excluded_dirs[@]}; do
     for extension in ${extensions_to_categories[$category]}; do
@@ -55,22 +74,11 @@ is_ext_contained_in_excluded_dirs() {
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
-    -v|--verbose)
-      verbose=true
-      shift
-      ;;
-    -ed|--exclude-dirs)
-      IFS=',' read -ra excluded_dirs <<< "$2"
-      shift 2
-      ;;
-    -ie|--ignore-exts)
-      IFS=',' read -ra ignored_exts <<< "$2"
-      shift 2
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
+    -v|--verbose) verbose=true; shift ;;
+    -e|--exclude-dirs) IFS=',' read -ra excluded_dirs <<< "$2"; shift 2 ;;
+    -i|--ignore-exts) IFS=',' read -ra ignored_exts <<< "$2"; shift 2 ;;
+    -n|--dry-run) dry_run=true; shift ;;
+    -h|--help) usage; exit 0 ;;
     *)
       # Assume it's the directory path if it's not a flag
       if [[ -z "$target_dir" && ! "$key" =~ ^- ]]; then
@@ -99,6 +107,10 @@ fi
 # Remove trailing slash from tagret_dir if present
 target_dir="${target_dir%/}"
 
+if $dry_run; then
+  echo "--- DRY RUN ENABLED: No files will be moved ---"
+fi
+
 # --- Main Logic ---
 
 for category in "${!extensions_to_categories[@]}"; do
@@ -110,8 +122,7 @@ for category in "${!extensions_to_categories[@]}"; do
   category_path="${target_dir}/${category}"
 
   if [[ ! -d "$category_path" ]]; then
-    log "Creating directory: $category_path"
-    mkdir -p "$category_path"
+    run_cmd "Creating directory: $category_path" "mkdir -p \"$category_path\""
   fi
 
   for extension in ${extensions_to_categories[$category]}; do
@@ -120,20 +131,32 @@ for category in "${!extensions_to_categories[@]}"; do
       continue
     fi
 
-    mv "$target_dir"/*."$extension" "$category_path" -u 2>/dev/null
+    if ls "$target_dir"/*."$extension" &>/dev/null; then
+      for file in "$target_dir"/*."$extension"; do
+        [[ -d "$file" ]] && continue
+        [[ ! -e "$file" ]] && continue
+
+        run_cmd "Moving $(basename "$file") to $category_path" "mv \"$file\" \"$category_path\" -u"
+
+        if $dry_run; then
+          dry_run_files+=("$file")
+        fi
+      done
+    fi
   done
-  log
 done
 
 if [[ ! " ${excluded_dirs[*]} " =~ " ${others_dir} " ]]; then
   others_path="${target_dir}/${others_dir}"
 
   if [[ ! -d "$others_path" ]]; then
-    log "Creating directory: $others_path"
-    mkdir -p "$others_path"
+    run_cmd "Creating directory: $others_path" "mkdir -p \"$others_path\""
   fi
 
   for file in "${target_dir}"/*.*; do
+    [[ -d "$file" ]] && continue
+    [[ ! -e "$file" ]] && continue
+
     extension="${file##*.}"
 
     if [[ " ${ignored_exts[*]} " =~ " $extension " ]]; then
@@ -146,10 +169,25 @@ if [[ ! " ${excluded_dirs[*]} " =~ " ${others_dir} " ]]; then
       continue
     fi
 
-    mv "$file" "$others_path" -u
+    if $dry_run; then
+      skip_file=false
+
+      for dry_run_file in "${dry_run_files[@]}"; do
+        if [[ "$dry_run_file" == "$file" ]]; then
+          skip_file=true
+          break
+        fi
+      done
+
+      if $skip_file; then
+        continue
+      fi
+    fi
+
+    run_cmd "Moving $(basename "$file") to $others_path" "mv \"$file\" \"$others_path\" -u"
   done
 else
-  log "Skipping the Others category and ignoring the rest of the files"
+  log "Skipping the Others category"
 fi
 log
 

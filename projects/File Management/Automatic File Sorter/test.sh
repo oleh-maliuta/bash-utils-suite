@@ -116,7 +116,7 @@ test_basic_organization() {
 
 test_category_excluding() {
   # Run the script
-  ./run.sh "$test_dir" -ed 'Images,Documents'
+  ./run.sh "$test_dir" -e 'Images,Documents'
 
   # Validate
   for file in "${images[@]}"; do
@@ -160,7 +160,7 @@ test_category_excluding() {
 
 test_others_dir_excluding() {
   # Run the script
-  ./run.sh "$test_dir" -ed "Videos,Others"
+  ./run.sh "$test_dir" -e "Videos,Others"
 
   # Validate
   for file in "${images[@]}"; do
@@ -204,11 +204,11 @@ test_others_dir_excluding() {
 
 test_extension_ignoring() {
   # Run the script
-  ./run.sh "$test_dir" -ie "docx,c,png"
+  ./run.sh "$test_dir" -i "docx,c,png"
 
   # Validate
-  local ie_files=('document2.docx' 'other1.c' 'image2.png')
-  for file in "${ie_files[@]}"; do
+  local i_files=('document2.docx' 'other1.c' 'image2.png')
+  for file in "${i_files[@]}"; do
     local file_path="${test_dir}/${file}"
     if ! assert_file_exists "$file_path"; then
       error_msg="There is no such file ($file_path)."
@@ -222,6 +222,44 @@ test_extension_ignoring() {
   fi
 }
 
+test_dry_run() {
+  # Run the script
+  ./run.sh "$test_dir" -n -i "cs,mp4"
+
+  # Validate
+  for file in "${images[@]}"; do
+    local file_path="${test_dir}/${file}"
+    if ! assert_file_exists "$file_path"; then
+      error_msg="There is no such file ($file_path)."
+      return
+    fi
+  done
+
+  for file in "${videos[@]}"; do
+    local file_path="${test_dir}/${file}"
+    if ! assert_file_exists "$file_path"; then
+      error_msg="There is no such file ($file_path)."
+      return
+    fi
+  done
+
+  for file in "${documents[@]}"; do
+    local file_path="${test_dir}/${file}"
+    if ! assert_file_exists "$file_path"; then
+      error_msg="There is no such file ($file_path)."
+      return
+    fi
+  done
+
+  for file in "${others[@]}"; do
+    local file_path="${test_dir}/${file}"
+    if ! assert_file_exists "$file_path"; then
+      error_msg="There is no such file ($file_path)."
+      return
+    fi
+  done
+}
+
 # --- Execution ---
 
 declare -A tests
@@ -229,11 +267,16 @@ tests[test_basic_organization]='Basic Organization'
 tests[test_category_excluding]='Category Excluding'
 tests[test_others_dir_excluding]='Others Directory Excluding'
 tests[test_extension_ignoring]='Extension Ignoring'
+tests[test_dry_run]='Dry Run'
 
-test_number=1
+test_number=0
 for test in "${!tests[@]}"; do
+  ((test_number++))
+  error_msg=''
+
   echo "--- Test $test_number: ${tests[$test]} ---"
   before_each
+
   $test &>/dev/null
 
   if [[ -n "$error_msg" ]]; then
@@ -243,6 +286,4 @@ for test in "${!tests[@]}"; do
   fi
 
   after_each
-  error_msg=''
-  ((test_number++))
 done
