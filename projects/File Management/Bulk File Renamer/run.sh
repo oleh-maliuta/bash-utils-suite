@@ -37,26 +37,6 @@ usage() {
   echo "  $0 --dir ./photos --prefix '2023_' --lower"
 }
 
-# Logger
-log() {
-  if $verbose || $dry_run; then
-    echo "$1"
-  fi
-}
-
-# Action wrapper to handle dry runs
-run_cmd() {
-  local msg="$1"
-  local cmd="$2"
-
-  if $dry_run; then
-    echo "[DRY RUN] $msg"
-  else
-    log "$msg"
-    eval "$cmd"
-  fi
-}
-
 # --- Argument Parsing ---
 
 while [[ $# -gt 0 ]]; do

@@ -3,7 +3,7 @@
 # Variables that are available for the current and the child scripts
 export location_name="home"
 export message_color="\e[1;32m"
-export message="Welcome to the list of my experemental Bash projects!"
+export message="Welcome to the list of my experimental Bash tools!"
 export selected_section=""
 export selected_project=""
 
@@ -28,22 +28,23 @@ while [ -n "$location_name" ]; do
 
   # Set the path depending on the current location
   case "$location_name" in
-    home)
-      location_path=("Home")
-      ;;
-    sections)
-      location_path=("Home" "Sections")
-      ;;
-    projects)
-      location_path=("Home" "Sections" "$selected_section")
-      ;;
-    manage_project)
-      location_path=("Home" "Sections" "$selected_section" "$selected_project")
-      ;;
-    *)
-      clear
-      echo -e "\e[1;31mError:\e[0m Invalid location_name variable!"
-      exit 1
+  home)
+    location_path=("Home")
+    ;;
+  sections)
+    location_path=("Home" "Sections")
+    ;;
+  projects)
+    location_path=("Home" "Sections" "$selected_section")
+    ;;
+  manage_project)
+    location_path=("Home" "Sections" "$selected_section" "$selected_project")
+    ;;
+  *)
+    clear
+    echo -e "\e[1;31mError:\e[0m Invalid location_name variable!"
+    exit 1
+    ;;
   esac
 
   # Prepare the location path to display
